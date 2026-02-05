@@ -1,0 +1,7 @@
+{
+  "name": "Noor's Ramadan Journey",
+  "description": "A colorful, gamified Ramadan progress tracker for kids featuring Noor, a friendly AI companion powered by Gemini.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
