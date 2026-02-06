@@ -1,58 +1,61 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, DailyProgress, GlobalState, UserData } from './types';
 import Header from './components/Header';
 import DailyTracker from './components/DailyTracker';
 import ProgressOverview from './components/ProgressOverview';
 import RamadanBuddy from './components/RamadanBuddy';
 import BadgeGallery from './components/BadgeGallery';
-import ExportPdf from './components/ExportPdf'; // We will create this next
+import ExportPdf from './components/ExportPdf';
+import { FirestoreService } from './services/FirestoreService';
 
 const App: React.FC = () => {
-  const [state, setState] = useState<GlobalState>(() => {
-    const saved = localStorage.getItem('ramadan_progress_app_v2');
-    if (saved) {
-      return JSON.parse(saved);
-    }
-
-    // Migration check: check for v1 data
-    const savedLegacy = localStorage.getItem('ramadan_progress_app');
-    if (savedLegacy) {
-      try {
-        const legacyData = JSON.parse(savedLegacy);
-        if (legacyData.user) {
-          const legacyUser = legacyData.user;
-          // Ensure legacy user has an ID (generate one if missing, though it shouldn't exist in legacy)
-          const newId = legacyUser.id || Date.now().toString();
-          const migratedUser: UserProfile = { ...legacyUser, id: newId };
-
-          return {
-            users: {
-              [newId]: {
-                profile: migratedUser,
-                progress: legacyData.progress || {},
-                badges: legacyData.badges || []
-              }
-            },
-            activeUserId: null // Start at selection screen so they see their migrated user
-          };
-        }
-      } catch (e) {
-        console.error("Migration failed", e);
-      }
-    }
-
-    return {
-      users: {},
-      activeUserId: null
-    };
+  const [state, setState] = useState<GlobalState>({
+    users: {},
+    activeUserId: null
   });
 
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load from Firestore on mount
   useEffect(() => {
+    const loadUsers = async () => {
+      // First, try loading local storage for immediate UI
+      const saved = localStorage.getItem('ramadan_progress_app_v2');
+      if (saved) {
+        setState(JSON.parse(saved));
+        setIsLoading(false); // Show local data immediately
+      }
+
+      // Then fetch from Firestore and merge/update
+      const firestoreUsers = await FirestoreService.getAllUsers();
+      if (Object.keys(firestoreUsers).length > 0) {
+        setState(prev => ({
+          ...prev,
+          // Merge: prefer Firestore data as truth, but keep local activeUserId if valid
+          users: firestoreUsers,
+          activeUserId: prev.activeUserId && firestoreUsers[prev.activeUserId] ? prev.activeUserId : null
+        }));
+      }
+      setIsLoading(false);
+    };
+
+    loadUsers();
+  }, []);
+
+  // Save to LocalStorage (backup) and Firestore on change
+  useEffect(() => {
+    if (Object.keys(state.users).length === 0) return;
+
     localStorage.setItem('ramadan_progress_app_v2', JSON.stringify(state));
+
+    // Auto-save active user to Firestore
+    if (state.activeUserId) {
+      const currentUserData = state.users[state.activeUserId];
+      FirestoreService.saveUser(currentUserData);
+    }
   }, [state]);
 
-  const handleCreateUser = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
@@ -73,11 +76,15 @@ const App: React.FC = () => {
       badges: []
     };
 
+    // Update state first
     setState(prev => ({
       ...prev,
       users: { ...prev.users, [id]: newUserData },
       activeUserId: id
     }));
+
+    // Explicitly save new user to Firestore
+    await FirestoreService.saveUser(newUserData);
   };
 
   const handleSelectUser = (id: string) => {
