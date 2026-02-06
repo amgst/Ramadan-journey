@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { UserProfile, DailyProgress } from '../types';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
 interface ExportPdfProps {
