@@ -1,108 +1,239 @@
 
 import React, { useState, useEffect } from 'react';
-import { UserProfile, DailyProgress, AppState } from './types';
+import { UserProfile, DailyProgress, GlobalState, UserData } from './types';
 import Header from './components/Header';
 import DailyTracker from './components/DailyTracker';
 import ProgressOverview from './components/ProgressOverview';
 import RamadanBuddy from './components/RamadanBuddy';
 import BadgeGallery from './components/BadgeGallery';
+import ExportPdf from './components/ExportPdf'; // We will create this next
 
 const App: React.FC = () => {
-  const [state, setState] = useState<AppState>(() => {
-    const saved = localStorage.getItem('ramadan_progress_app');
-    return saved ? JSON.parse(saved) : {
-      user: null,
-      progress: {},
-      badges: []
+  const [state, setState] = useState<GlobalState>(() => {
+    const saved = localStorage.getItem('ramadan_progress_app_v2');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+
+    // Migration check: check for v1 data
+    const savedLegacy = localStorage.getItem('ramadan_progress_app');
+    if (savedLegacy) {
+      try {
+        const legacyData = JSON.parse(savedLegacy);
+        if (legacyData.user) {
+          const legacyUser = legacyData.user;
+          // Ensure legacy user has an ID (generate one if missing, though it shouldn't exist in legacy)
+          const newId = legacyUser.id || Date.now().toString();
+          const migratedUser: UserProfile = { ...legacyUser, id: newId };
+
+          return {
+            users: {
+              [newId]: {
+                profile: migratedUser,
+                progress: legacyData.progress || {},
+                badges: legacyData.badges || []
+              }
+            },
+            activeUserId: null // Start at selection screen so they see their migrated user
+          };
+        }
+      } catch (e) {
+        console.error("Migration failed", e);
+      }
+    }
+
+    return {
+      users: {},
+      activeUserId: null
     };
   });
 
   useEffect(() => {
-    localStorage.setItem('ramadan_progress_app', JSON.stringify(state));
+    localStorage.setItem('ramadan_progress_app_v2', JSON.stringify(state));
   }, [state]);
 
-  const handleSetup = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateUser = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const age = parseInt(formData.get('age') as string) || 7;
+    const id = Date.now().toString();
+
     const newUser: UserProfile = {
-      name: formData.get('name') as string,
-      age: parseInt(formData.get('age') as string) || 7,
+      id,
+      name,
+      age,
       avatar: '🌙',
       currentDay: 1
     };
-    setState(prev => ({ ...prev, user: newUser }));
-  };
 
-  const updateProgress = (day: number, data: Partial<DailyProgress>) => {
+    const newUserData: UserData = {
+      profile: newUser,
+      progress: {},
+      badges: []
+    };
+
     setState(prev => ({
       ...prev,
-      progress: {
-        ...prev.progress,
-        [day]: {
-          ...(prev.progress[day] || {
-            dayNumber: day,
-            date: new Date().toISOString(),
-            fasted: 'none',
-            prayers: { fajr: false, dhuhr: false, asr: false, maghrib: false, isha: false, taraweeh: false },
-            quranPages: 0,
-            goodDeed: '',
-            kindnessPoints: 0
-          }),
-          ...data
-        }
-      }
+      users: { ...prev.users, [id]: newUserData },
+      activeUserId: id
     }));
   };
 
-  const addBadge = (badgeId: string) => {
-    if (!state.badges.includes(badgeId)) {
-      setState(prev => ({ ...prev, badges: [...prev.badges, badgeId] }));
-    }
+  const handleSelectUser = (id: string) => {
+    setState(prev => ({ ...prev, activeUserId: id }));
   };
 
-  if (!state.user) {
+  const updateProgress = (day: number, data: Partial<DailyProgress>) => {
+    if (!state.activeUserId) return;
+
+    setState(prev => {
+      const activeUserId = prev.activeUserId!;
+      const currentUserData = prev.users[activeUserId];
+
+      return {
+        ...prev,
+        users: {
+          ...prev.users,
+          [activeUserId]: {
+            ...currentUserData,
+            progress: {
+              ...currentUserData.progress,
+              [day]: {
+                ...(currentUserData.progress[day] || {
+                  dayNumber: day,
+                  date: new Date().toISOString(),
+                  fasted: 'none',
+                  prayers: { fajr: false, dhuhr: false, asr: false, maghrib: false, isha: false, taraweeh: false },
+                  quranPages: 0,
+                  goodDeed: '',
+                  kindnessPoints: 0
+                }),
+                ...data
+              }
+            }
+          }
+        }
+      };
+    });
+  };
+
+  const addBadge = (badgeId: string) => {
+    if (!state.activeUserId) return;
+
+    setState(prev => {
+      const activeUserId = prev.activeUserId!;
+      const currentUserData = prev.users[activeUserId];
+      if (currentUserData.badges.includes(badgeId)) return prev;
+
+      return {
+        ...prev,
+        users: {
+          ...prev.users,
+          [activeUserId]: {
+            ...currentUserData,
+            badges: [...currentUserData.badges, badgeId]
+          }
+        }
+      };
+    });
+  };
+
+  const handleLogout = () => {
+    setState(prev => ({ ...prev, activeUserId: null }));
+  };
+
+  const updateCurrentDay = (day: number) => {
+    if (!state.activeUserId) return;
+    setState(prev => {
+      const activeUserId = prev.activeUserId!;
+      return {
+        ...prev,
+        users: {
+          ...prev.users,
+          [activeUserId]: {
+            ...prev.users[activeUserId],
+            profile: {
+              ...prev.users[activeUserId].profile,
+              currentDay: day
+            }
+          }
+        }
+      };
+    });
+  };
+
+
+  // --- VIEW: User Selection / Creation ---
+  if (!state.activeUserId) {
+    const existingUsers = Object.values(state.users);
+
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border-4 border-amber-400">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-2xl w-full border-4 border-amber-400">
           <div className="text-center mb-8">
             <span className="text-6xl mb-4 block">🌙</span>
-            <h1 className="text-3xl font-bold text-amber-600">Noor's Journey</h1>
-            <p className="text-gray-600 mt-2">Ready to track your Ramadan progress?</p>
+            <h1 className="text-3xl font-bold text-amber-600">Ramadan Journey</h1>
+            <p className="text-gray-600 mt-2">Who is tracking their progress today?</p>
           </div>
-          <form onSubmit={handleSetup} className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Your Name</label>
-              <input 
-                name="name" 
-                required 
-                className="w-full px-4 py-3 rounded-xl border-2 border-amber-100 focus:border-amber-400 outline-none transition" 
-                placeholder="What's your name?" 
-              />
+
+          {existingUsers.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
+              {existingUsers.map(userData => (
+                <button
+                  key={userData.profile.id}
+                  onClick={() => handleSelectUser(userData.profile.id)}
+                  className="p-4 rounded-xl border-2 border-amber-100 hover:border-amber-400 hover:bg-amber-50 transition flex flex-col items-center"
+                >
+                  <span className="text-4xl mb-2">{userData.profile.avatar}</span>
+                  <span className="font-bold text-gray-800">{userData.profile.name}</span>
+                  <span className="text-xs text-gray-500">{userData.badges.length} Badges</span>
+                </button>
+              ))}
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">Your Age</label>
-              <input 
-                name="age" 
-                type="number" 
-                required 
-                className="w-full px-4 py-3 rounded-xl border-2 border-amber-100 focus:border-amber-400 outline-none transition" 
-                placeholder="How old are you?" 
-              />
-            </div>
-            <button 
-              type="submit" 
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:scale-105"
-            >
-              Start My Ramadan Adventure!
-            </button>
-          </form>
+          )}
+
+          <div className="border-t border-gray-200 pt-6">
+            <h2 className="text-xl font-bold text-gray-700 mb-4 text-center">
+              {existingUsers.length > 0 ? "Or add a new explorer:" : "Start your journey:"}
+            </h2>
+            <form onSubmit={handleCreateUser} className="space-y-4 max-w-sm mx-auto">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Name</label>
+                <input
+                  name="name"
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-amber-100 focus:border-amber-400 outline-none transition"
+                  placeholder="Enter name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Age</label>
+                <input
+                  name="age"
+                  type="number"
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-amber-100 focus:border-amber-400 outline-none transition"
+                  placeholder="Enter age"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl shadow-lg transition transform hover:scale-105"
+              >
+                + Add New User
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     );
   }
 
-  const currentDayData = state.progress[state.user.currentDay] || {
-    dayNumber: state.user.currentDay,
+  // --- VIEW: Main App ---
+  const activeUser = state.users[state.activeUserId];
+  const currentDayData = activeUser.progress[activeUser.profile.currentDay] || {
+    dayNumber: activeUser.profile.currentDay,
     date: new Date().toISOString(),
     fasted: 'none',
     prayers: { fajr: false, dhuhr: false, asr: false, maghrib: false, isha: false, taraweeh: false },
@@ -113,43 +244,50 @@ const App: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto pb-12">
-      <Header user={state.user} onDayChange={(day) => setState(prev => ({ ...prev, user: { ...prev.user!, currentDay: day } }))} />
-      
+      <Header user={activeUser.profile} onDayChange={updateCurrentDay} />
+
+      <div className="px-4 flex justify-between items-center mt-2">
+        <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-amber-600 underline">
+          ← Switch User
+        </button>
+        <ExportPdf user={activeUser.profile} progress={activeUser.progress} />
+      </div>
+
       <main className="px-4 grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
         <div className="lg:col-span-8 space-y-6">
-          <RamadanBuddy user={state.user} currentProgress={currentDayData} />
-          <DailyTracker 
-            day={state.user.currentDay} 
-            data={currentDayData} 
-            onUpdate={(update) => updateProgress(state.user!.currentDay, update)}
+          <RamadanBuddy user={activeUser.profile} currentProgress={currentDayData} />
+          <DailyTracker
+            day={activeUser.profile.currentDay}
+            data={currentDayData}
+            onUpdate={(update) => updateProgress(activeUser.profile.currentDay, update)}
             onBadgeEarned={addBadge}
           />
         </div>
-        
+
         <div className="lg:col-span-4 space-y-6">
-          <ProgressOverview progress={state.progress} />
-          <BadgeGallery earnedBadges={state.badges} />
+          <ProgressOverview progress={activeUser.progress} />
+          <BadgeGallery earnedBadges={activeUser.badges} />
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-amber-100 p-4 flex justify-around items-center lg:hidden shadow-2xl">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-amber-100 p-4 flex justify-around items-center lg:hidden shadow-2xl z-50">
         <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="p-2 flex flex-col items-center">
-            <span className="text-2xl">🏠</span>
-            <span className="text-xs font-bold text-amber-600">Home</span>
+          <span className="text-2xl">🏠</span>
+          <span className="text-xs font-bold text-amber-600">Home</span>
         </button>
         <button onClick={() => {
-            const el = document.getElementById('tracker');
-            el?.scrollIntoView({ behavior: 'smooth' });
+          const el = document.getElementById('tracker');
+          el?.scrollIntoView({ behavior: 'smooth' });
         }} className="p-2 flex flex-col items-center">
-            <span className="text-2xl">✍️</span>
-            <span className="text-xs font-bold text-amber-600">Log</span>
+          <span className="text-2xl">✍️</span>
+          <span className="text-xs font-bold text-amber-600">Log</span>
         </button>
         <button onClick={() => {
-            const el = document.getElementById('badges');
-            el?.scrollIntoView({ behavior: 'smooth' });
+          const el = document.getElementById('badges');
+          el?.scrollIntoView({ behavior: 'smooth' });
         }} className="p-2 flex flex-col items-center">
-            <span className="text-2xl">🏅</span>
-            <span className="text-xs font-bold text-amber-600">Badges</span>
+          <span className="text-2xl">🏅</span>
+          <span className="text-xs font-bold text-amber-600">Badges</span>
         </button>
       </div>
     </div>
