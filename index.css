@@ -1,0 +1,14 @@
+/* Main CSS file */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    font-family: 'Quicksand', sans-serif;
+    background: linear-gradient(135deg, #fef9c3 0%, #fef3c7 100%);
+    min-height: 100vh;
+}
+
+h1,h2,h3, .font-kids {
+    font-family: 'Fredoka', sans-serif;
+}
