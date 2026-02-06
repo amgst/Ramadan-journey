@@ -173,7 +173,7 @@ const App: React.FC = () => {
 
   // --- VIEW: User Selection / Creation ---
   if (!state.activeUserId) {
-    const existingUsers = Object.values(state.users);
+    const existingUsers = Object.values(state.users) as UserData[];
 
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">

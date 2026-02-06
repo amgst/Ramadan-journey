@@ -5,32 +5,32 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 interface ExportPdfProps {
-    user: UserProfile;
-    progress: Record<number, DailyProgress>;
+  user: UserProfile;
+  progress: Record<number, DailyProgress>;
 }
 
 const ExportPdf: React.FC<ExportPdfProps> = ({ user, progress }) => {
-    const [isExporting, setIsExporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
-    const handleExport = async () => {
-        setIsExporting(true);
-        try {
-            // Create a temporary hidden container for the report
-            const reportContainer = document.createElement('div');
-            reportContainer.style.position = 'absolute';
-            reportContainer.style.top = '-9999px';
-            reportContainer.style.left = '-9999px';
-            reportContainer.style.width = '800px'; // Fixed width for A4 like ratio
-            reportContainer.style.background = '#ffffff';
-            reportContainer.style.padding = '40px';
-            reportContainer.className = 'export-container';
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      // Create a temporary hidden container for the report
+      const reportContainer = document.createElement('div');
+      reportContainer.style.position = 'absolute';
+      reportContainer.style.top = '-9999px';
+      reportContainer.style.left = '-9999px';
+      reportContainer.style.width = '800px'; // Fixed width for A4 like ratio
+      reportContainer.style.background = '#ffffff';
+      reportContainer.style.padding = '40px';
+      reportContainer.className = 'export-container';
 
-            // Build HTML content
-            const days = Object.values(progress).sort((a, b) => a.dayNumber - b.dayNumber);
-            const totalFasts = days.filter(d => d.fasted === 'full').length;
-            const totalQuran = days.reduce((sum, d) => sum + (d.quranPages || 0), 0);
+      // Build HTML content
+      const days = (Object.values(progress) as DailyProgress[]).sort((a, b) => a.dayNumber - b.dayNumber);
+      const totalFasts = days.filter(d => d.fasted === 'full').length;
+      const totalQuran = days.reduce((sum, d) => sum + (d.quranPages || 0), 0);
 
-            reportContainer.innerHTML = `
+      reportContainer.innerHTML = `
         <div style="font-family: sans-serif; color: #333;">
           <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #f59e0b; padding-bottom: 20px;">
             <h1 style="color: #d97706; margin: 0;">Ramadan Journey Report</h1>
@@ -81,48 +81,48 @@ const ExportPdf: React.FC<ExportPdfProps> = ({ user, progress }) => {
         </div>
       `;
 
-            document.body.appendChild(reportContainer);
+      document.body.appendChild(reportContainer);
 
-            const canvas = await html2canvas(reportContainer, {
-                scale: 2,
-                useCORS: true
-            });
+      const canvas = await html2canvas(reportContainer, {
+        scale: 2,
+        useCORS: true
+      });
 
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Ramadan_Journey_${user.name.replace(/\s+/g, '_')}.pdf`);
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Ramadan_Journey_${user.name.replace(/\s+/g, '_')}.pdf`);
 
-            document.body.removeChild(reportContainer);
-        } catch (err) {
-            console.error("Failed to export PDF", err);
-            alert("Failed to create PDF. Please try again.");
-        } finally {
-            setIsExporting(false);
-        }
-    };
+      document.body.removeChild(reportContainer);
+    } catch (err) {
+      console.error("Failed to export PDF", err);
+      alert("Failed to create PDF. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
-    return (
-        <button
-            onClick={handleExport}
-            disabled={isExporting}
-            className={`
+  return (
+    <button
+      onClick={handleExport}
+      disabled={isExporting}
+      className={`
         px-4 py-2 rounded-lg font-bold text-sm shadow-sm transition flex items-center gap-2
         ${isExporting
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-white text-amber-600 border border-amber-200 hover:bg-amber-50'}
+          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+          : 'bg-white text-amber-600 border border-amber-200 hover:bg-amber-50'}
       `}
-        >
-            {isExporting ? 'Generating...' : (
-                <>
-                    <span>📄</span> Export Report
-                </>
-            )}
-        </button>
-    );
+    >
+      {isExporting ? 'Generating...' : (
+        <>
+          <span>📄</span> Export Report
+        </>
+      )}
+    </button>
+  );
 };
 
 export default ExportPdf;
