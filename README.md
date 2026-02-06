@@ -18,3 +18,10 @@ View your app in AI Studio: https://ai.studio/apps/drive/1IDO_HluId2CMHbForKOHgi
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Deploy to Vercel
+
+1. **Push to GitHub**: ensure your latest changes are pushed.
+2. **Import in Vercel**: Go to [Vercel](https://vercel.com/new), import your repository.
+3. **Environment Variables**: Add `GEMINI_API_KEY` in the Vercel project settings.
+4. **Deploy**: Click Deploy! The `vercel.json` included in this project handles the routing configuration.
