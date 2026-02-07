@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { UserProfile, DailyProgress } from '../types';
-import { jsPDF } from 'jspdf';
+import { DailyProgress, UserProfile } from '../types';
+import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 interface ExportPdfProps {
@@ -94,7 +94,7 @@ const ExportPdf: React.FC<ExportPdfProps> = ({ user, progress }) => {
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Ramadan_Journey_${user.name.replace(/\s+/g, '_')}.pdf`);
+      pdf.save(`Ramadan_Journey_${(user.name || 'User').replace(/\s+/g, '_')}.pdf`);
 
       document.body.removeChild(reportContainer);
     } catch (err) {

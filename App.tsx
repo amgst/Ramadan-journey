@@ -238,7 +238,12 @@ const App: React.FC = () => {
   }
 
   // --- VIEW: Main App ---
-  const activeUser = state.users[state.activeUserId];
+  const activeUser = state.activeUserId ? state.users[state.activeUserId] : null;
+
+  if (!activeUser || !state.activeUserId) {
+    return <div className="p-8 text-center">Loading user data...</div>;
+  }
+
   const currentDayData = activeUser.progress[activeUser.profile.currentDay] || {
     dayNumber: activeUser.profile.currentDay,
     date: new Date().toISOString(),

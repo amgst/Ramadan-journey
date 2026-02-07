@@ -1,7 +1,4 @@
 /* Main CSS file */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 body {
     font-family: 'Quicksand', sans-serif;
@@ -9,6 +6,9 @@ body {
     min-height: 100vh;
 }
 
-h1,h2,h3, .font-kids {
+h1,
+h2,
+h3,
+.font-kids {
     font-family: 'Fredoka', sans-serif;
 }
