@@ -14,7 +14,7 @@ const ProgressOverview: React.FC<Props> = ({ progress }) => {
   const chartData = progressEntries.sort((a, b) => a.dayNumber - b.dayNumber).map(d => ({
     name: `D${d.dayNumber}`,
     quran: d.quranPages,
-    prayers: Object.values(d.prayers).filter(Boolean).length,
+    prayers: (Object.values(d.prayers) as boolean[]).filter(Boolean).length,
     day: d.dayNumber
   }));
 
@@ -27,7 +27,7 @@ const ProgressOverview: React.FC<Props> = ({ progress }) => {
       <h3 className="text-xl font-bold text-amber-800 mb-6 flex items-center gap-2">
         <span>📊</span> My Ramadan Stats
       </h3>
-      
+
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="bg-amber-50 p-4 rounded-2xl text-center">
           <span className="text-3xl block">🏆</span>
@@ -46,9 +46,9 @@ const ProgressOverview: React.FC<Props> = ({ progress }) => {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
             <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-            <Tooltip 
-              cursor={{fill: '#fef3c7'}} 
-              contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+            <Tooltip
+              cursor={{ fill: '#fef3c7' }}
+              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
             />
             <Bar dataKey="prayers" radius={[4, 4, 0, 0]}>
               {chartData.map((entry, index) => (

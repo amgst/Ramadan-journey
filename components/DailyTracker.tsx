@@ -13,8 +13,8 @@ const DailyTracker: React.FC<Props> = ({ day, data, onUpdate, onBadgeEarned }) =
   const togglePrayer = (prayer: keyof DailyProgress['prayers']) => {
     const newPrayers = { ...data.prayers, [prayer]: !data.prayers[prayer] };
     onUpdate({ prayers: newPrayers });
-    
-    const count = Object.values(newPrayers).filter(Boolean).length;
+
+    const count = (Object.values(newPrayers) as boolean[]).filter(Boolean).length;
     if (count === 5) onBadgeEarned('Punctual Prayer');
     if (count === 6) onBadgeEarned('Qiyam Star');
   };
@@ -29,7 +29,7 @@ const DailyTracker: React.FC<Props> = ({ day, data, onUpdate, onBadgeEarned }) =
       <div className="bg-amber-500 p-6 text-white">
         <h3 className="text-2xl font-bold">Day {day} Progress Log</h3>
       </div>
-      
+
       <div className="p-6 space-y-8">
         {/* Fasting Section */}
         <section>
@@ -46,11 +46,10 @@ const DailyTracker: React.FC<Props> = ({ day, data, onUpdate, onBadgeEarned }) =
               <button
                 key={opt.id}
                 onClick={() => setFasted(opt.id as any)}
-                className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${
-                  data.fasted === opt.id 
-                  ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-md scale-105' 
-                  : 'border-gray-100 hover:border-amber-200 text-gray-500'
-                }`}
+                className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${data.fasted === opt.id
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-md scale-105'
+                    : 'border-gray-100 hover:border-amber-200 text-gray-500'
+                  }`}
               >
                 <span className="text-2xl">{opt.icon}</span>
                 <span className="text-xs font-bold">{opt.label}</span>
@@ -69,11 +68,10 @@ const DailyTracker: React.FC<Props> = ({ day, data, onUpdate, onBadgeEarned }) =
               <button
                 key={name}
                 onClick={() => togglePrayer(name as any)}
-                className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${
-                  completed 
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-md' 
-                  : 'border-gray-100 hover:border-emerald-200 text-gray-500'
-                }`}
+                className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${completed
+                    ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-md'
+                    : 'border-gray-100 hover:border-emerald-200 text-gray-500'
+                  }`}
               >
                 <span className="text-xl capitalize">{name === 'fajr' ? '🌅' : name === 'taraweeh' ? '✨' : '🕌'}</span>
                 <span className="text-[10px] font-bold uppercase">{name}</span>
@@ -93,8 +91,8 @@ const DailyTracker: React.FC<Props> = ({ day, data, onUpdate, onBadgeEarned }) =
             </h4>
             <span className="text-blue-600 font-bold">{data.quranPages} pages</span>
           </div>
-          <input 
-            type="range" 
+          <input
+            type="range"
             min="0" max="20" step="1"
             value={data.quranPages}
             onChange={(e) => onUpdate({ quranPages: parseInt(e.target.value) })}
@@ -107,7 +105,7 @@ const DailyTracker: React.FC<Props> = ({ day, data, onUpdate, onBadgeEarned }) =
           <h4 className="text-lg font-bold text-amber-800 mb-4 flex items-center gap-2">
             <span>❤️</span> My Good Deed Today
           </h4>
-          <textarea 
+          <textarea
             value={data.goodDeed}
             onChange={(e) => onUpdate({ goodDeed: e.target.value })}
             placeholder="Tell us one kind thing you did today..."

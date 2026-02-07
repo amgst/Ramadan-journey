@@ -67,7 +67,7 @@ const ExportPdf: React.FC<ExportPdfProps> = ({ user, progress }) => {
                 <tr style="border-bottom: 1px solid #eee;">
                   <td style="padding: 10px; font-weight: bold;">${day.dayNumber}</td>
                   <td style="padding: 10px;">${day.fasted === 'full' ? '🌟 Full' : day.fasted === 'none' ? '❌' : '🌙 Part'}</td>
-                  <td style="padding: 10px;">${Object.values(day.prayers).filter(Boolean).length}/6</td>
+                  <td style="padding: 10px;">${(Object.values(day.prayers) as boolean[]).filter(Boolean).length}/6</td>
                   <td style="padding: 10px;">${day.quranPages}</td>
                   <td style="padding: 10px; font-style: italic;">${day.goodDeed || '-'}</td>
                 </tr>
