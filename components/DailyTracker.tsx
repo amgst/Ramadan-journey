@@ -8,6 +8,7 @@ interface Props {
   onUpdate: (data: Partial<DailyProgress>) => void;
   onBadgeEarned: (badge: string) => void;
 }
+const PRAYER_ORDER: (keyof DailyProgress['prayers'])[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha', 'taraweeh'];
 
 const DailyTracker: React.FC<Props> = ({ day, data, onUpdate, onBadgeEarned }) => {
   const togglePrayer = (prayer: keyof DailyProgress['prayers']) => {
@@ -47,8 +48,8 @@ const DailyTracker: React.FC<Props> = ({ day, data, onUpdate, onBadgeEarned }) =
                 key={opt.id}
                 onClick={() => setFasted(opt.id as any)}
                 className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${data.fasted === opt.id
-                    ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-md scale-105'
-                    : 'border-gray-100 hover:border-amber-200 text-gray-500'
+                  ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-md scale-105'
+                  : 'border-gray-100 hover:border-amber-200 text-gray-500'
                   }`}
               >
                 <span className="text-2xl">{opt.icon}</span>
@@ -64,22 +65,25 @@ const DailyTracker: React.FC<Props> = ({ day, data, onUpdate, onBadgeEarned }) =
             <span>🤲</span> My Prayers (Salah)
           </h4>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {Object.entries(data.prayers).map(([name, completed]) => (
-              <button
-                key={name}
-                onClick={() => togglePrayer(name as any)}
-                className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${completed
+            {PRAYER_ORDER.map((name) => {
+              const completed = data.prayers[name];
+              return (
+                <button
+                  key={name}
+                  onClick={() => togglePrayer(name)}
+                  className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 ${completed
                     ? 'border-emerald-500 bg-emerald-50 text-emerald-700 shadow-md'
                     : 'border-gray-100 hover:border-emerald-200 text-gray-500'
-                  }`}
-              >
-                <span className="text-xl capitalize">{name === 'fajr' ? '🌅' : name === 'taraweeh' ? '✨' : '🕌'}</span>
-                <span className="text-[10px] font-bold uppercase">{name}</span>
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-1 ${completed ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300'}`}>
-                  {completed && <span className="text-white text-[10px]">✓</span>}
-                </div>
-              </button>
-            ))}
+                    }`}
+                >
+                  <span className="text-xl capitalize">{name === 'fajr' ? '🌅' : name === 'taraweeh' ? '✨' : '🕌'}</span>
+                  <span className="text-[10px] font-bold uppercase">{name}</span>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-1 ${completed ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300'}`}>
+                    {completed && <span className="text-white text-[10px]">✓</span>}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </section>
 
