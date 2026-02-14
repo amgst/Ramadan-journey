@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
   const SUPER_ADMIN_PASSWORD = "admin786"; // You can change this or move to env
 
@@ -81,7 +82,7 @@ const App: React.FC = () => {
   const handleUserLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUserId) return;
-    
+
     const user = state.users[selectedUserId];
     if (user.profile.passcode === passcodeInput) {
       setState(prev => ({ ...prev, activeUserId: selectedUserId, isAdminMode: false }));
@@ -92,38 +93,45 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCreateUser = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const age = parseInt(formData.get('age') as string) || 7;
     const passcode = formData.get('passcode') as string;
-    const id = Date.now().toString();
 
-    const newUser: UserProfile = {
-      id,
+    const id = editingUserId || Date.now().toString();
+    const existingUser = editingUserId ? state.users[editingUserId] : null;
+
+    const updatedUser: UserProfile = {
+      ...(existingUser?.profile || {
+        id,
+        avatar: '🌙',
+        currentDay: 1,
+        role: 'user',
+      }),
       name,
       age,
-      avatar: '🌙',
-      currentDay: 1,
-      role: 'user',
       passcode: passcode || '1234'
     };
 
-    const newUserData: UserData = {
-      profile: newUser,
-      progress: {},
-      badges: []
+    const updatedUserData: UserData = {
+      ...(existingUser || {
+        progress: {},
+        badges: []
+      }),
+      profile: updatedUser
     };
 
     // Update state first
     setState(prev => ({
       ...prev,
-      users: { ...prev.users, [id]: newUserData }
+      users: { ...prev.users, [id]: updatedUserData }
     }));
 
-    // Explicitly save new user to Firestore
-    await FirestoreService.saveUser(newUserData);
+    // Explicitly save to Firestore
+    await FirestoreService.saveUser(updatedUserData);
+    setEditingUserId(null);
     e.currentTarget.reset();
   };
 
@@ -301,14 +309,17 @@ const App: React.FC = () => {
           {state.isAdminMode && (
             <div className="space-y-8">
               <div className="bg-amber-50 p-6 rounded-2xl border-2 border-amber-200">
-                <h2 className="text-xl font-bold text-amber-800 mb-4 text-center">Add New Explorer</h2>
-                <form onSubmit={handleCreateUser} className="space-y-4 max-w-sm mx-auto">
+                <h2 className="text-xl font-bold text-amber-800 mb-4 text-center">
+                  {editingUserId ? "Edit Explorer" : "Add New Explorer"}
+                </h2>
+                <form onSubmit={handleSaveUser} className="space-y-4 max-w-sm mx-auto" key={editingUserId || 'new'}>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-1">Name</label>
                       <input
                         name="name"
                         required
+                        defaultValue={editingUserId ? state.users[editingUserId].profile.name : ''}
                         className="w-full px-4 py-2 rounded-xl border-2 border-white focus:border-amber-400 outline-none transition"
                         placeholder="Name"
                       />
@@ -319,6 +330,7 @@ const App: React.FC = () => {
                         name="age"
                         type="number"
                         required
+                        defaultValue={editingUserId ? state.users[editingUserId].profile.age : ''}
                         className="w-full px-4 py-2 rounded-xl border-2 border-white focus:border-amber-400 outline-none transition"
                         placeholder="Age"
                       />
@@ -329,17 +341,29 @@ const App: React.FC = () => {
                     <input
                       name="passcode"
                       required
+                      defaultValue={editingUserId ? state.users[editingUserId].profile.passcode : ''}
                       className="w-full px-4 py-2 rounded-xl border-2 border-white focus:border-amber-400 outline-none transition"
                       placeholder="e.g. 1234"
                       maxLength={4}
                     />
                   </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl shadow-lg transition"
-                  >
-                    + Add User
-                  </button>
+                  <div className="flex gap-2">
+                    {editingUserId && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingUserId(null)}
+                        className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl transition"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                    <button
+                      type="submit"
+                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl shadow-lg transition"
+                    >
+                      {editingUserId ? "Save Changes" : "+ Add User"}
+                    </button>
+                  </div>
                 </form>
               </div>
 
@@ -355,19 +379,27 @@ const App: React.FC = () => {
                           <p className="text-xs text-gray-500">Passcode: {u.profile.passcode}</p>
                         </div>
                       </div>
-                      <button 
-                        onClick={async () => {
-                          if (confirm(`Delete ${u.profile.name}?`)) {
-                            await FirestoreService.deleteUser(u.profile.id);
-                            const newUsers = { ...state.users };
-                            delete newUsers[u.profile.id];
-                            setState(prev => ({ ...prev, users: newUsers }));
-                          }
-                        }}
-                        className="text-red-400 hover:text-red-600 p-2"
-                      >
-                        🗑️
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditingUserId(u.profile.id)}
+                          className="text-amber-500 hover:text-amber-700 p-2"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (confirm(`Delete ${u.profile.name}?`)) {
+                              await FirestoreService.deleteUser(u.profile.id);
+                              const newUsers = { ...state.users };
+                              delete newUsers[u.profile.id];
+                              setState(prev => ({ ...prev, users: newUsers }));
+                            }
+                          }}
+                          className="text-red-400 hover:text-red-600 p-2"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

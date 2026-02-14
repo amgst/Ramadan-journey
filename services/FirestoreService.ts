@@ -1,6 +1,6 @@
 
 import { db } from "../firebase";
-import { collection, doc, setDoc, getDocs, getDoc } from "firebase/firestore";
+import { collection, doc, setDoc, getDocs, getDoc, deleteDoc } from "firebase/firestore";
 import { UserData, GlobalState } from "../types";
 
 const USERS_COLLECTION = "users";
@@ -57,7 +57,6 @@ export const FirestoreService = {
     // Delete a user from Firestore
     deleteUser: async (userId: string) => {
         try {
-            const { deleteDoc } = await import("firebase/firestore");
             const userRef = doc(db, USERS_COLLECTION, userId);
             await deleteDoc(userRef);
             console.log(`User ${userId} deleted from Firestore.`);
