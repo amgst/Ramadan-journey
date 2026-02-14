@@ -23,6 +23,8 @@ export interface UserProfile {
   age: number;
   avatar: string;
   currentDay: number;
+  role: 'admin' | 'user';
+  passcode: string;
 }
 
 export interface UserData {
@@ -34,6 +36,7 @@ export interface UserData {
 export interface GlobalState {
   users: Record<string, UserData>; // Keyed by User ID
   activeUserId: string | null;
+  isAdminMode: boolean;
 }
 
 export interface AppState {

@@ -52,5 +52,17 @@ export const FirestoreService = {
             console.error("Error fetching user:", error);
             return null;
         }
+    },
+
+    // Delete a user from Firestore
+    deleteUser: async (userId: string) => {
+        try {
+            const { deleteDoc } = await import("firebase/firestore");
+            const userRef = doc(db, USERS_COLLECTION, userId);
+            await deleteDoc(userRef);
+            console.log(`User ${userId} deleted from Firestore.`);
+        } catch (error) {
+            console.error("Error deleting user from Firestore:", error);
+        }
     }
 };
