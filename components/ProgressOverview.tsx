@@ -37,7 +37,7 @@ const ProgressOverview: React.FC<Props> = ({ progress }) => {
         <div className="bg-blue-50 p-4 rounded-2xl text-center">
           <span className="text-3xl block">📖</span>
           <span className="text-2xl font-bold text-blue-700 block">{totalQuran}</span>
-          <span className="text-[10px] uppercase font-bold text-blue-600">Quran Pages</span>
+          <span className="text-[10px] uppercase font-bold text-blue-600">Quran Ruku</span>
         </div>
       </div>
 

@@ -10,7 +10,7 @@ const ALL_BADGES = [
   { id: 'Punctual Prayer', icon: '⏰', desc: 'Completed all 5 daily prayers' },
   { id: 'Qiyam Star', icon: '✨', desc: 'Prayed Taraweeh tonight' },
   { id: 'Kindness King', icon: '👑', desc: 'Wrote down 5 good deeds' },
-  { id: 'Quran Voyager', icon: '🌊', desc: 'Read 10 pages of Quran' },
+  { id: 'Quran Voyager', icon: '🌊', desc: 'Read 10 Ruku of Quran' },
   { id: 'Ramadan Rookie', icon: '🌱', desc: 'Logged your first day' },
 ];
 

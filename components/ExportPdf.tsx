@@ -43,7 +43,7 @@ const ExportPdf: React.FC<ExportPdfProps> = ({ user, progress }) => {
               <p style="margin: 5px 0 0 0; font-size: 24px; font-weight: bold; color: #d97706;">${totalFasts}</p>
             </div>
             <div style="text-align: center;">
-               <h3 style="margin: 0; font-size: 14px; color: #92400e;">Quran Pages</h3>
+               <h3 style="margin: 0; font-size: 14px; color: #92400e;">Quran Ruku</h3>
               <p style="margin: 5px 0 0 0; font-size: 24px; font-weight: bold; color: #d97706;">${totalQuran}</p>
             </div>
             <div style="text-align: center;">
@@ -58,7 +58,7 @@ const ExportPdf: React.FC<ExportPdfProps> = ({ user, progress }) => {
                 <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Day</th>
                 <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Fasting</th>
                 <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Prayers</th>
-                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Quran</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Quran Ruku</th>
                 <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Good Deed</th>
               </tr>
             </thead>

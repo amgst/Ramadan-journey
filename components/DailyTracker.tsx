@@ -93,7 +93,7 @@ const DailyTracker: React.FC<Props> = ({ day, data, onUpdate, onBadgeEarned }) =
             <h4 className="text-lg font-bold text-blue-800 flex items-center gap-2">
               <span>📖</span> Quran Reading
             </h4>
-            <span className="text-blue-600 font-bold">{data.quranPages} pages</span>
+            <span className="text-blue-600 font-bold">{data.quranPages} Ruku</span>
           </div>
           <input
             type="range"
