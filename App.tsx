@@ -25,6 +25,9 @@ const App: React.FC = () => {
 
   // Load from Firestore on mount
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const initialUserId = params.get('user');
+
     const loadUsers = async () => {
       // First, try loading local storage for immediate UI
       const saved = localStorage.getItem('ramadan_progress_app_v2');
@@ -34,6 +37,9 @@ const App: React.FC = () => {
           ...parsed,
           isAdminMode: parsed.isAdminMode || false // Ensure it's reset or preserved
         });
+        if (initialUserId && parsed.users && parsed.users[initialUserId]) {
+          setSelectedUserId(initialUserId);
+        }
         setIsLoading(false);
       }
 
@@ -45,6 +51,9 @@ const App: React.FC = () => {
           users: firestoreUsers,
           activeUserId: prev.activeUserId && firestoreUsers[prev.activeUserId] ? prev.activeUserId : null
         }));
+        if (initialUserId && firestoreUsers[initialUserId]) {
+          setSelectedUserId(initialUserId);
+        }
       }
       setIsLoading(false);
     };
@@ -385,6 +394,20 @@ const App: React.FC = () => {
                           className="text-amber-500 hover:text-amber-700 p-2"
                         >
                           ✏️
+                        </button>
+                        <button
+                          onClick={() => {
+                            const url = `${window.location.origin}${window.location.pathname}?user=${u.profile.id}`;
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                              navigator.clipboard.writeText(url);
+                              alert('Share link copied to clipboard');
+                            } else {
+                              prompt('Copy this share link', url);
+                            }
+                          }}
+                          className="text-blue-500 hover:text-blue-700 p-2"
+                        >
+                          🔗
                         </button>
                         <button
                           onClick={async () => {
